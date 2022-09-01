@@ -25,6 +25,25 @@ def classify(mask: np.ndarray) -> Tuple[np.ndarray, bool]:
     return tf.cast(mask, tf.uint8)
 
 
+def get_edgenn_caller(
+    model: tf.keras.models.Model,
+) -> tf.types.experimental.ConcreteFunction:
+    def evaluate(
+        model: tf.keras.models.Model,
+        skel_img: tf.Tensor,
+        node_pos: tf.Tensor,
+        combo_img: tf.Tensor,
+    ):
+        return model((skel_img, node_pos, combo_img), training=False)
+
+    return tf.function(evaluate).get_concrete_function(
+        model=model,
+        skel_img=tf.TensorSpec(shape=(None, 256, 256), dtype=tf.float32),
+        node_pos=tf.TensorSpec(shape=(None, 256, 256), dtype=tf.uint8),
+        combo_img=tf.TensorSpec(shape=(None, 256, 256), dtype=tf.int64),
+    )
+
+
 class SavedModel(object):
     def __init__(self, filepath):
         self._model = tf.keras.models.load_model(filepath)

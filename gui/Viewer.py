@@ -14,6 +14,7 @@ class Viewer(QMainWindow):
         # defaults
         self.image_size = IMAGE_SIZE
         self._nodes_nn = None
+        self._adj_matr_predictor = None
 
         # ui elements
         self._graphics = Graphics()
@@ -40,13 +41,15 @@ class Viewer(QMainWindow):
         height = self._graphics.height
         return QSize(width, height)
 
-    def set_models(self, nodes_nn):
+    def set_models(self, nodes_nn, adj_matr_predictor):
         self._nodes_nn = nodes_nn
+        self._adj_matr_predictor = adj_matr_predictor
         self.predict()  # initial pred
 
     def predict(self):
         if self._nodes_nn:
             skel, pos, deg = self._nodes_nn.predict_from_fp(self.current_filepath)
+            self._adj_matr_predictor.predict((skel, pos, deg))
 
             self._graphics.display_node_pos(pos)
 

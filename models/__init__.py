@@ -1,3 +1,4 @@
+from .AdjMatrPredictor import AdjMatrPredictor
 from .models import EdgeNN, NodesNN
 
 
@@ -12,3 +13,4 @@ def load():
 
 
 nodes_nn, edge_nn = load()
+adj_matr_predictor = AdjMatrPredictor(edge_nn, num_neighbours=1)
