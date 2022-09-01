@@ -48,6 +48,8 @@ class Viewer(QMainWindow):
         if self._nodes_nn:
             skel, pos, deg = self._nodes_nn.predict_from_fp(self.current_filepath)
 
+            self._graphics.display_node_pos(pos)
+
     @property
     def current_filepath(self):
         if self._graphics.current_filepath:

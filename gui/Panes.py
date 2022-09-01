@@ -2,9 +2,29 @@ import os
 from enum import Enum
 from typing import Optional
 
+import tensorflow as tf
 from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QLabel, QVBoxLayout
+
+
+def _img_to_pixmap(im_):
+    img_dims = im_.shape
+    if len(img_dims) < 3:
+        im = tf.expand_dims(im_, -1)
+    else:
+        im = im_
+
+    if im.dtype == tf.uint8:
+        if im.numpy().max() == 1:
+            im = 255 * im
+
+    im = tf.image.grayscale_to_rgb(im)
+    im = tf.image.convert_image_dtype(im, dtype=tf.uint8).numpy()
+
+    height, width = img_dims[0], img_dims[1]
+    qim = QImage(im.data, width, height, im.strides[0], QImage.Format_RGB888)
+    return QPixmap.fromImage(qim)
 
 
 class PanesEnum(Enum):
@@ -48,11 +68,14 @@ class Panes(QLabel):
         self.setLayout(layout)
 
     def display(self, filepath: str) -> None:
-        self._display_image(filepath)
+        self.display_image(filepath)
         self._display_text(filepath)
 
-    def _display_image(self, filepath) -> None:
-        self._image.setPixmap(QPixmap(filepath))
+    def display_image(self, img) -> None:
+        if isinstance(img, str):
+            self._image.setPixmap(QPixmap(img))
+        else:
+            self._image.setPixmap(_img_to_pixmap(img))
 
     def _display_text(self, text):
         text = os.path.split(text)[1]

@@ -34,6 +34,9 @@ class Graphics(QLabel):
         self._input_pane.display(filepath)
         self.parent().predict()
 
+    def display_node_pos(self, img):
+        self._output_pane.display_image(img)
+
     @property
     def height(self) -> int:
         return self.layout().sizeHint().height()
