@@ -32,6 +32,7 @@ class Graphics(QLabel):
     def display(self, filepath_: Optional = None) -> None:
         filepath = filepath_ if filepath_ else self._current_filepath
         self._input_pane.display(filepath)
+        self.parent().predict()
 
     @property
     def height(self) -> int:

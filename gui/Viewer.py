@@ -13,6 +13,7 @@ class Viewer(QMainWindow):
 
         # defaults
         self.image_size = IMAGE_SIZE
+        self._nodes_nn = None
 
         # ui elements
         self._graphics = Graphics()
@@ -38,6 +39,14 @@ class Viewer(QMainWindow):
         width = self._graphics.width + self._sidebar.width
         height = self._graphics.height
         return QSize(width, height)
+
+    def set_models(self, nodes_nn):
+        self._nodes_nn = nodes_nn
+        self.predict()  # initial pred
+
+    def predict(self):
+        if self._nodes_nn:
+            skel, pos, deg = self._nodes_nn.predict_from_fp(self.current_filepath)
 
     @property
     def current_filepath(self):
