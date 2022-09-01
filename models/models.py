@@ -49,3 +49,8 @@ class NodesNN(SavedModel):
         deg = tf.squeeze(classify(deg))
 
         return skel, pos, deg
+
+
+class EdgeNN(SavedModel):
+    def __init__(self, filepath):
+        super(EdgeNN, self).__init__(filepath)
