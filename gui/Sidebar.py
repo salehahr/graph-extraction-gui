@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QDockWidget,
     QFileDialog,
     QGridLayout,
+    QGroupBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -20,7 +21,7 @@ class Sidebar(QDockWidget):
     def __init__(self, data_container: DataContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._file_browser = FileBrowser(data_container)
+        self._file_browser = FileBrowser("File browser", data_container)
 
         self._init_layout()
 
@@ -43,12 +44,24 @@ class Sidebar(QDockWidget):
         layout.setAlignment(Qt.AlignTop)
 
 
-class FileBrowser(QWidget):
-    def __init__(self, data_container: DataContainer, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class SideBarWidget(QGroupBox):
+    def __init__(self, title: str, data_container: DataContainer, *args, **kwargs):
+        super().__init__(title, *args, **kwargs)
 
         self._data_container: DataContainer = data_container
 
+        self._init_layout()
+
+    def _init_layout(self):
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+
+class FileBrowser(SideBarWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _init_layout(self):
         browse_button = QPushButton("Browse")
         browse_button.clicked.connect(self._browse)
 
