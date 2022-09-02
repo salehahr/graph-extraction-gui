@@ -1,30 +1,14 @@
+from __future__ import annotations
+
 import os
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-import tensorflow as tf
 from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QLabel, QVBoxLayout
 
-
-def _img_to_pixmap(im_):
-    img_dims = im_.shape
-    if len(img_dims) < 3:
-        im = tf.expand_dims(im_, -1)
-    else:
-        im = im_
-
-    if im.dtype == tf.uint8:
-        if im.numpy().max() == 1:
-            im = 255 * im
-
-    im = tf.image.grayscale_to_rgb(im)
-    im = tf.image.convert_image_dtype(im, dtype=tf.uint8).numpy()
-
-    height, width = img_dims[0], img_dims[1]
-    qim = QImage(im.data, width, height, im.strides[0], QImage.Format_RGB888)
-    return QPixmap.fromImage(qim)
+if TYPE_CHECKING:
+    from .DataContainer import DataContainer
 
 
 class PanesEnum(Enum):
@@ -33,14 +17,15 @@ class PanesEnum(Enum):
 
 
 class Panes(QLabel):
-    def __init__(self, _id: int, image_size: int, *args, **kwargs):
+    def __init__(self, _id: int, data_container: DataContainer, *args, **kwargs):
         super(Panes, self).__init__(*args, **kwargs)
         self.type = PanesEnum(_id)
         self.id = _id
 
-        self._descriptor = "Input" if self.type == PanesEnum.INPUT else "Output"
-        self._image_height: int = image_size
+        self._data_container = data_container
+        self._image_height: int = data_container.image_size
         self._text_height: int = 20
+        self._descriptor = "Input" if self.type == PanesEnum.INPUT else "Output"
 
         # ui elements
         self._image: Optional[QLabel] = None
@@ -67,18 +52,21 @@ class Panes(QLabel):
         layout.addWidget(self._text)
         self.setLayout(layout)
 
-    def display(self, filepath: str) -> None:
-        self.display_image(filepath)
-        self._display_text(filepath)
+    def display(self) -> None:
+        self._display_image()
+        self._display_filename()
 
-    def display_image(self, img) -> None:
-        if isinstance(img, str):
-            self._image.setPixmap(QPixmap(img))
+    def _display_image(self) -> None:
+        if self.type == PanesEnum.INPUT:
+            self._image.setPixmap(self._data_container.skel_image)
         else:
-            self._image.setPixmap(_img_to_pixmap(img))
+            self._image.setPixmap(self._data_container.node_pos_image)
 
-    def _display_text(self, text):
-        text = os.path.split(text)[1]
+    def _display_filename(self):
+        if self.type == PanesEnum.OUTPUT:
+            return
+
+        text = os.path.split(self._data_container.current_image_filepath)[1]
         text = os.path.splitext(text)[0]
 
         self._text.setText(text)

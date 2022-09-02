@@ -4,12 +4,6 @@ import numpy as np
 import tensorflow as tf
 
 
-def fp_to_grayscale_img(fp: tf.Tensor) -> tf.Tensor:
-    raw_img = tf.io.read_file(fp)
-    unscaled_img = tf.image.decode_png(raw_img, channels=1, dtype=tf.uint8)
-    return tf.image.convert_image_dtype(unscaled_img, tf.float32)
-
-
 def classify(mask: np.ndarray) -> Tuple[np.ndarray, bool]:
     """Returns mask with integer classes."""
     is_binary = mask.shape[-1] <= 2
@@ -57,9 +51,7 @@ class NodesNN(SavedModel):
     def __init__(self, filepath):
         super(NodesNN, self).__init__(filepath)
 
-    def predict_from_fp(self, filepath) -> Tuple:
-        skel = fp_to_grayscale_img(filepath)
-
+    def predict_from_skel(self, skel: tf.Tensor) -> Tuple:
         pred_input = tf.expand_dims(skel, 0)
         pos, deg, types = self._model.predict(pred_input)
 

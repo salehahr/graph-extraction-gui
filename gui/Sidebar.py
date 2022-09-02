@@ -13,14 +13,14 @@ from PyQt5.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from .Graphics import Graphics
+    from .DataContainer import DataContainer
 
 
 class Sidebar(QDockWidget):
-    def __init__(self, graphics: Graphics, *args, **kwargs):
+    def __init__(self, data_container: DataContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._file_browser = FileBrowser(graphics)
+        self._file_browser = FileBrowser(data_container)
 
         self._init_layout()
 
@@ -44,11 +44,10 @@ class Sidebar(QDockWidget):
 
 
 class FileBrowser(QWidget):
-    def __init__(self, graphics: Graphics, *args, **kwargs):
+    def __init__(self, data_container: DataContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._current_filepath: str = ""
-        self._graphics: Graphics = graphics
+        self._data_container: DataContainer = data_container
 
         browse_button = QPushButton("Browse")
         browse_button.clicked.connect(self._browse)
@@ -71,9 +70,8 @@ class FileBrowser(QWidget):
 
     @property
     def current_filepath(self):
-        return self._current_filepath
+        return self._data_container.current_image_filepath
 
     @current_filepath.setter
     def current_filepath(self, filepath):
-        self._current_filepath = filepath
-        self._graphics.current_filepath = filepath
+        self._data_container.current_image_filepath = filepath
