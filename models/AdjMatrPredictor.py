@@ -220,3 +220,11 @@ class AdjMatrPredictor(object):
     @property
     def pos_list_xy(self) -> np.ndarray:
         return self._pos_list_xy.numpy()
+
+    @property
+    def k0(self):
+        return self._init_num_neighbours
+
+    @k0.setter
+    def k0(self, value):
+        self._init_num_neighbours = value

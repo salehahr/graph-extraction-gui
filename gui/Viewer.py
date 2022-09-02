@@ -52,15 +52,15 @@ class Viewer(QMainWindow):
     def update_predicted_graph(self):
         self._graphics.display_predicted_graph()
 
+    def update_adjacency_matrix(self):
+        self._data_container.update_adjacency_matrix(self._adj_matr_predictor)
+
     def _predict(self):
         if self._nodes_nn:
-            skel, pos, deg = self._nodes_nn.predict_from_skel(
+            self._data_container.predictor_inputs = self._nodes_nn.predict_from_skel(
                 self._data_container.skel_image_tensor
             )
-            self._data_container.node_pos_tensor = pos
-
-            self._adj_matr_predictor.predict((skel, pos, deg))
-            self._data_container.update_adjacency_matrix(self._adj_matr_predictor)
+            self.update_adjacency_matrix()
 
     def sizeHint(self) -> QSize:
         width = self._graphics.width + self._sidebar.width
@@ -70,3 +70,7 @@ class Viewer(QMainWindow):
     @property
     def current_filepath(self):
         return self._data_container.current_image_filepath
+
+    @property
+    def adj_matr_predictor(self):
+        return self._adj_matr_predictor

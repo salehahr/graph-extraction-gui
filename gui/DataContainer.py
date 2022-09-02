@@ -1,33 +1,38 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import tensorflow as tf
 from PyQt5.QtGui import QPixmap
 
-from .graphics_ops import tf_img_to_pixmap, fp_to_grayscale_img
+from .graphics_ops import fp_to_grayscale_img, tf_img_to_pixmap
 
 if TYPE_CHECKING:
     import numpy as np
     from .Viewer import Viewer
 
-from config import DEFAULT_FILEPATH, IMAGE_SIZE
+from config import DEFAULT_FILEPATH, IMAGE_SIZE, num_neighbours
 
 
 class DataContainer(object):
     def __init__(self, viewer: Viewer):
-        self.image_size = IMAGE_SIZE
-        self._viewer = viewer
+        self.image_size: int = IMAGE_SIZE
+        self._viewer: Viewer = viewer
+        self._num_neighbours: int = num_neighbours
 
         self._current_image_filepath: str = DEFAULT_FILEPATH
         self._node_pos_tensor: Optional[tf.Tensor] = None
+        self._node_deg_tensor: Optional[tf.Tensor] = None
 
         self._pos_list_xy: Optional[np.ndarray] = None
         self._adjacency_matrix: Optional[np.ndarray] = None
 
     def update_adjacency_matrix(self, predictor):
+        predictor.predict(self.predictor_inputs)
+
         self._pos_list_xy = predictor.pos_list_xy
         self._adjacency_matrix = predictor.A
+
         self._viewer.update_predicted_graph()
 
     @property
@@ -65,9 +70,40 @@ class DataContainer(object):
         return tf_img_to_pixmap(self.node_pos_tensor)
 
     @property
+    def node_deg_tensor(self) -> tf.Tensor:
+        return self._node_deg_tensor
+
+    @node_deg_tensor.setter
+    def node_deg_tensor(self, value: tf.Tensor) -> None:
+        self._node_deg_tensor = value
+
+    @property
+    def predictor_inputs(self) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+        return self.skel_image_tensor, self.node_pos_tensor, self.node_deg_tensor
+
+    @predictor_inputs.setter
+    def predictor_inputs(self, inputs: Tuple[tf.Tensor, ...]):
+        _, node_pos, node_deg = inputs
+
+        self.node_pos_tensor = node_pos
+        self.node_deg_tensor = node_deg
+
+    @property
     def pos_list_xy(self):
         return self._pos_list_xy
 
     @property
     def adjacency_matrix(self) -> np.ndarray:
         return self._adjacency_matrix
+
+    @property
+    def num_neighbours(self):
+        return self._num_neighbours
+
+    @num_neighbours.setter
+    def num_neighbours(self, k: int):
+        if self._num_neighbours != k:
+            self._num_neighbours = k
+
+            self._viewer.adj_matr_predictor.k0 = k
+            self._viewer.update_adjacency_matrix()

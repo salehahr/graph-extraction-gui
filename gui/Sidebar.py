@@ -4,9 +4,11 @@ import os
 from typing import TYPE_CHECKING, Optional
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QDockWidget,
     QFileDialog,
+    QFormLayout,
     QGridLayout,
     QGroupBox,
     QLabel,
@@ -27,6 +29,7 @@ class Sidebar(QDockWidget):
         super().__init__(*args, **kwargs)
 
         self._file_browser = FileBrowser("File browser", data_container)
+        self._adj_scheme = AdjacencyScheme("AC scheme settings", data_container)
 
         self._init_layout()
 
@@ -40,6 +43,7 @@ class Sidebar(QDockWidget):
 
         layout = QVBoxLayout()
         layout.addWidget(self._file_browser)
+        layout.addWidget(self._adj_scheme)
 
         multi_widget = QWidget()
         multi_widget.setLayout(layout)
@@ -124,3 +128,38 @@ class FileBrowser(SideBarWidget):
         self.current_directory = os.path.split(
             os.path.relpath(self.current_filepath, start="./")
         )[0]
+
+
+class AdjacencyScheme(SideBarWidget):
+    def __init__(self, *args, **kwargs):
+        self._num_neighbours_field: Optional[QLineEdit] = None
+
+        super().__init__(*args, **kwargs)
+
+    def _init_layout(self):
+        layout = QFormLayout()
+
+        validator = QIntValidator(1, 50)
+        self._num_neighbours_field = QLineEdit(str(self.num_neighbours))
+        self._num_neighbours_field.setValidator(validator)
+        self._num_neighbours_field.setFixedWidth(25)
+
+        layout.addRow("Num. neighbours (k0)", self._num_neighbours_field)
+
+        apply_button = QPushButton("Apply")
+        apply_button.clicked.connect(self._set_num_neighbours)
+
+        layout.addRow(apply_button)
+
+        self.setLayout(layout)
+
+    def _set_num_neighbours(self):
+        self.num_neighbours = int(self._num_neighbours_field.text())
+
+    @property
+    def num_neighbours(self):
+        return self._data_container.num_neighbours
+
+    @num_neighbours.setter
+    def num_neighbours(self, k: int):
+        self._data_container.num_neighbours = k
