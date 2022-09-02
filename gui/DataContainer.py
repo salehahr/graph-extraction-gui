@@ -3,38 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 import tensorflow as tf
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QPixmap
+
+from .graphics_ops import tf_img_to_pixmap, fp_to_grayscale_img
 
 if TYPE_CHECKING:
     import numpy as np
     from .Viewer import Viewer
 
 from .config import DEFAULT_FILEPATH, IMAGE_SIZE
-
-
-def fp_to_grayscale_img(fp: str) -> tf.Tensor:
-    raw_img = tf.io.read_file(fp)
-    unscaled_img = tf.image.decode_png(raw_img, channels=1, dtype=tf.uint8)
-    return tf.image.convert_image_dtype(unscaled_img, tf.float32)
-
-
-def _img_to_pixmap(im_: tf.Tensor) -> QPixmap:
-    img_dims = im_.shape
-    if len(img_dims) < 3:
-        im = tf.expand_dims(im_, -1)
-    else:
-        im = im_
-
-    if im.dtype == tf.uint8:
-        if im.numpy().max() == 1:
-            im = 255 * im
-
-    im = tf.image.grayscale_to_rgb(im)
-    im = tf.image.convert_image_dtype(im, dtype=tf.uint8).numpy()
-
-    height, width = img_dims[0], img_dims[1]
-    qim = QImage(im.data, width, height, im.strides[0], QImage.Format_RGB888)
-    return QPixmap.fromImage(qim)
 
 
 class DataContainer(object):
@@ -44,7 +21,14 @@ class DataContainer(object):
 
         self._current_image_filepath: str = DEFAULT_FILEPATH
         self._node_pos_tensor: Optional[tf.Tensor] = None
+
+        self._pos_list_xy: Optional[np.ndarray] = None
         self._adjacency_matrix: Optional[np.ndarray] = None
+
+    def update_adjacency_matrix(self, predictor):
+        self._pos_list_xy = predictor.pos_list_xy
+        self._adjacency_matrix = predictor.A
+        self._viewer.update_predicted_graph()
 
     @property
     def current_image_filepath(self) -> str:
@@ -64,6 +48,10 @@ class DataContainer(object):
         return fp_to_grayscale_img(self.current_image_filepath)
 
     @property
+    def skel_image_array(self) -> np.ndarray:
+        return self.skel_image_tensor.numpy()
+
+    @property
     def node_pos_tensor(self) -> tf.Tensor:
         return self._node_pos_tensor
 
@@ -74,12 +62,12 @@ class DataContainer(object):
 
     @property
     def node_pos_image(self) -> QPixmap:
-        return _img_to_pixmap(self.node_pos_tensor)
+        return tf_img_to_pixmap(self.node_pos_tensor)
+
+    @property
+    def pos_list_xy(self):
+        return self._pos_list_xy
 
     @property
     def adjacency_matrix(self) -> np.ndarray:
         return self._adjacency_matrix
-
-    @adjacency_matrix.setter
-    def adjacency_matrix(self, value: np.ndarray):
-        self._adjacency_matrix = value

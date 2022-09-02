@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import QHBoxLayout, QLabel
 
@@ -31,6 +31,9 @@ class Graphics(QLabel):
 
     def display_node_pos(self):
         self._output_pane.display()
+
+    def display_predicted_graph(self):
+        self._output_pane.display_predicted_graph()
 
     @property
     def height(self) -> int:

@@ -216,3 +216,7 @@ class AdjMatrPredictor(object):
     @property
     def A(self) -> np.ndarray:
         return self._A.value().numpy()
+
+    @property
+    def pos_list_xy(self) -> np.ndarray:
+        return self._pos_list_xy.numpy()

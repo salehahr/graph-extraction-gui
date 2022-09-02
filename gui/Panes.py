@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Optional
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QLabel, QVBoxLayout
 
+from .graphics_ops import draw_graph, np_img_to_pixmap
+
 if TYPE_CHECKING:
     from .DataContainer import DataContainer
 
@@ -70,6 +72,19 @@ class Panes(QLabel):
         text = os.path.splitext(text)[0]
 
         self._text.setText(text)
+
+    def display_predicted_graph(self):
+        if self.type == PanesEnum.INPUT:
+            return
+
+        A = self._data_container.adjacency_matrix
+        A = A.squeeze() if A.ndim == 3 else A
+
+        skel_image = self._data_container.skel_image_array
+        pos_list = self._data_container.pos_list_xy
+
+        img = draw_graph(skel_image, pos_list, A)
+        self._image.setPixmap(img)
 
     def sizeHint(self) -> QSize:
         width = self._image_height

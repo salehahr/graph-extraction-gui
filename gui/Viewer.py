@@ -46,7 +46,11 @@ class Viewer(QMainWindow):
         self._predict()
 
     def update_node_pos_image(self):
-        self._graphics.display_node_pos()
+        pass
+        # self._graphics.display_node_pos()
+
+    def update_predicted_graph(self):
+        self._graphics.display_predicted_graph()
 
     def _predict(self):
         if self._nodes_nn:
@@ -54,7 +58,7 @@ class Viewer(QMainWindow):
             self._data_container.node_pos_tensor = pos
 
             self._adj_matr_predictor.predict((skel, pos, deg))
-            self._data_container.adjacency_matrix = self._adj_matr_predictor.A
+            self._data_container.update_adjacency_matrix(self._adj_matr_predictor)
 
     def sizeHint(self) -> QSize:
         width = self._graphics.width + self._sidebar.width
