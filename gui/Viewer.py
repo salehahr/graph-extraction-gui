@@ -32,7 +32,7 @@ class Viewer(QMainWindow):
         layout = QGridLayout()
         self.setLayout(layout)
 
-        self.setWindowIcon(QIcon("./img/icon.png"))
+        self.setWindowIcon(QIcon("./assets/icon.png"))
         self.setWindowTitle("Graph Extraction")
         self.resize(self.sizeHint())
 
@@ -54,7 +54,9 @@ class Viewer(QMainWindow):
 
     def _predict(self):
         if self._nodes_nn:
-            skel, pos, deg = self._nodes_nn.predict_from_skel(self._data_container.skel_image_tensor)
+            skel, pos, deg = self._nodes_nn.predict_from_skel(
+                self._data_container.skel_image_tensor
+            )
             self._data_container.node_pos_tensor = pos
 
             self._adj_matr_predictor.predict((skel, pos, deg))
