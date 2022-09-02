@@ -1,6 +1,8 @@
 from .AdjMatrPredictor import AdjMatrPredictor
 from .models import EdgeNN, NodesNN
 
+from config import num_neighbours
+
 
 def load():
     nodes_nn_weights = "./models/nodes_nn"
@@ -13,4 +15,4 @@ def load():
 
 
 nodes_nn, edge_nn = load()
-adj_matr_predictor = AdjMatrPredictor(edge_nn, num_neighbours=1)
+adj_matr_predictor = AdjMatrPredictor(edge_nn, num_neighbours)

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     import numpy as np
     from .Viewer import Viewer
 
-from .config import DEFAULT_FILEPATH, IMAGE_SIZE
+from config import DEFAULT_FILEPATH, IMAGE_SIZE
 
 
 class DataContainer(object):
