@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from models.AdjMatrPredictor import AdjMatrPredictor
     from models.models import NodesNN
 
-from config import DEFAULT_FILEPATH, IMAGE_SIZE, num_neighbours
+from config import DEFAULT_FILEPATH, IMAGE_SIZE, algorithm, num_neighbours
 
 
 class DataContainer(object):
@@ -23,6 +23,7 @@ class DataContainer(object):
         self.image_size: int = IMAGE_SIZE
 
         # predictor parameters
+        self._algorithm: int = algorithm.value
         self._num_neighbours: int = num_neighbours
 
         # data objects
@@ -94,6 +95,14 @@ class DataContainer(object):
         self._node_deg_tensor = value
 
     # predictor parameters
+    @property
+    def algorithm(self) -> int:
+        return self._algorithm
+
+    @algorithm.setter
+    def algorithm(self, value: int) -> None:
+        self._algorithm = value
+
     @property
     def num_neighbours(self) -> int:
         return self._num_neighbours
