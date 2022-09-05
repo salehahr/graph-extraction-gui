@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Tuple
 
 import tensorflow as tf
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from . import neighbour_ops, utils
 from .ACS import AdjCombinationSchemes
@@ -21,8 +22,12 @@ def nodes_not_found(degrees: tf.Tensor) -> tf.Tensor:
     return tf.where(tf.not_equal(degrees, 0))
 
 
-class AdjMatrPredictor(object):
-    def __init__(self, edge_nn: EdgeNN, data_container: DataContainer):
+class AdjMatrPredictor(QObject):
+    finished = pyqtSignal()
+
+    def __init__(self, edge_nn: EdgeNN, data_container: DataContainer, *args, **kwargs):
+        super(AdjMatrPredictor, self).__init__(*args, **kwargs)
+
         self._model: tf.keras.models.Model = edge_nn.keras_model
         self._data_container: DataContainer = data_container
 
@@ -108,6 +113,8 @@ class AdjMatrPredictor(object):
 
                 self._increase_neighbours()
                 num_iters.assign_add(1)
+
+        self.finished.emit()
 
     def _init_prediction(self) -> None:
         """Initialises placeholders and flags before predicting."""

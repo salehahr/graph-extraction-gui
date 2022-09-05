@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QRunnable, Qt, QThread, QThreadPool, pyqtSlot
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QComboBox,
@@ -136,12 +136,27 @@ class FileBrowser(SideBarWidget):
         )[0]
 
 
+class ACSWorker(QRunnable):
+    def __init__(self, function: Callable, *args, **kwargs):
+        super(ACSWorker, self).__init__(*args, **kwargs)
+        self._function = function
+
+    @pyqtSlot()
+    def run(self):
+        self._function()
+
+
 class AdjacencyScheme(SideBarWidget):
     def __init__(self, *args, **kwargs):
         self._num_neighbours_field: Optional[QLineEdit] = None
         self._algorithm_field: Optional[QComboBox] = None
+        self._button: QPushButton = QPushButton("Apply")
 
         super().__init__(*args, **kwargs)
+
+        self._thread_pool = QThreadPool()
+        self._worker = ACSWorker(self._data_container.update_adjacency_matrix)
+        self.predictor.finished.connect(self._enable_button)
 
     def _init_layout(self):
         validator = QIntValidator(1, 50)
@@ -160,12 +175,16 @@ class AdjacencyScheme(SideBarWidget):
         layout.addRow("Algorithm", self._algorithm_field)
         layout.addRow("Num. neighbours (k0)", self._num_neighbours_field)
 
-        apply_button = QPushButton("Apply")
-        apply_button.clicked.connect(self._apply_settings)
-
-        layout.addRow(apply_button)
+        self._button.clicked.connect(self._apply_settings)
+        layout.addRow(self._button)
 
         self.setLayout(layout)
+
+    def _disable_button(self) -> None:
+        self._button.setDisabled(True)
+
+    def _enable_button(self) -> None:
+        self._button.setEnabled(True)
 
     def reset_settings(self):
         self._algorithm_field.setCurrentIndex(self.algorithm)
@@ -180,12 +199,18 @@ class AdjacencyScheme(SideBarWidget):
 
         if not (k0_changed or algorithm_changed):
             return
+        self._disable_button()
 
         if algorithm_changed:
             self.algorithm = new_algorithm
         if k0_changed:
             self.num_neighbours = new_k0
-        self._data_container.update_adjacency_matrix()
+
+        self._thread_pool.start(self._worker)
+
+    @property
+    def predictor(self):
+        return self._data_container.predictor
 
     @property
     def algorithm(self) -> int:

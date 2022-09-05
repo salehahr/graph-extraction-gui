@@ -61,6 +61,10 @@ class DataContainer(object):
         self._viewer.reset_settings()
         self._viewer.update_skel_image()
 
+    @property
+    def predictor(self) -> AdjMatrPredictor:
+        return self._predictor
+
     # predictor inputs
     @property
     def skel_image(self) -> QPixmap:
