@@ -11,9 +11,7 @@ class Viewer(QMainWindow):
     def __init__(self):
         super(Viewer, self).__init__()
 
-        # defaults
-        self._nodes_nn = None
-        self._adj_matr_predictor = None
+        # data elements
         self._data_container = DataContainer(self)
 
         # ui elements
@@ -21,9 +19,10 @@ class Viewer(QMainWindow):
         self._sidebar = Sidebar(self._data_container)
 
         self._init_ui()
-        self._graphics.display_skel_image()
-
         self.show()
+
+        # initial prediction
+        self.update_skel_image()
 
     def _init_ui(self) -> None:
         self.setCentralWidget(self._graphics)
@@ -36,14 +35,9 @@ class Viewer(QMainWindow):
         self.setWindowTitle("Graph Extraction")
         self.resize(self.sizeHint())
 
-    def set_models(self, nodes_nn, adj_matr_predictor):
-        self._nodes_nn = nodes_nn
-        self._adj_matr_predictor = adj_matr_predictor
-        self._predict()  # initial pred
-
     def update_skel_image(self):
         self._graphics.display_skel_image()
-        self._predict()
+        self._data_container.new_image_prediction()
 
     def update_node_pos_image(self):
         pass
@@ -52,25 +46,7 @@ class Viewer(QMainWindow):
     def update_predicted_graph(self):
         self._graphics.display_predicted_graph()
 
-    def update_adjacency_matrix(self):
-        self._data_container.update_adjacency_matrix(self._adj_matr_predictor)
-
-    def _predict(self):
-        if self._nodes_nn:
-            self._data_container.predictor_inputs = self._nodes_nn.predict_from_skel(
-                self._data_container.skel_image_tensor
-            )
-            self.update_adjacency_matrix()
-
     def sizeHint(self) -> QSize:
         width = self._graphics.width + self._sidebar.width
         height = self._graphics.height
         return QSize(width, height)
-
-    @property
-    def current_filepath(self):
-        return self._data_container.current_image_filepath
-
-    @property
-    def adj_matr_predictor(self):
-        return self._adj_matr_predictor

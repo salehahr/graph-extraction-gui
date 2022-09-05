@@ -5,11 +5,15 @@ from typing import TYPE_CHECKING, Optional, Tuple
 import tensorflow as tf
 from PyQt5.QtGui import QPixmap
 
+from models import adj_matr_predictor, nodes_nn
+
 from .graphics_ops import fp_to_grayscale_img, tf_img_to_pixmap
 
 if TYPE_CHECKING:
     import numpy as np
     from .Viewer import Viewer
+    from models.AdjMatrPredictor import AdjMatrPredictor
+    from models.models import NodesNN
 
 from config import DEFAULT_FILEPATH, IMAGE_SIZE, num_neighbours
 
@@ -17,21 +21,36 @@ from config import DEFAULT_FILEPATH, IMAGE_SIZE, num_neighbours
 class DataContainer(object):
     def __init__(self, viewer: Viewer):
         self.image_size: int = IMAGE_SIZE
+
+        # data objects
         self._viewer: Viewer = viewer
+        self._nodes_nn: NodesNN = nodes_nn
+        self._predictor: AdjMatrPredictor = adj_matr_predictor
+
+        # predictor parameters
         self._num_neighbours: int = num_neighbours
 
+        # predictor inputs
         self._current_image_filepath: str = DEFAULT_FILEPATH
         self._node_pos_tensor: Optional[tf.Tensor] = None
         self._node_deg_tensor: Optional[tf.Tensor] = None
 
+        # predictor outputs
         self._pos_list_xy: Optional[np.ndarray] = None
         self._adjacency_matrix: Optional[np.ndarray] = None
 
-    def update_adjacency_matrix(self, predictor):
-        predictor.predict(self.predictor_inputs)
+    def new_image_prediction(self):
+        if self._nodes_nn:
+            self.predictor_inputs = self._nodes_nn.predict_from_skel(
+                self.skel_image_tensor
+            )
+            self._update_adjacency_matrix()
 
-        self._pos_list_xy = predictor.pos_list_xy
-        self._adjacency_matrix = predictor.A
+    def _update_adjacency_matrix(self):
+        self._predictor.predict(self.predictor_inputs)
+
+        self._pos_list_xy = self._predictor.pos_list_xy
+        self._adjacency_matrix = self._predictor.A
 
         self._viewer.update_predicted_graph()
 
@@ -105,5 +124,5 @@ class DataContainer(object):
         if self._num_neighbours != k:
             self._num_neighbours = k
 
-            self._viewer.adj_matr_predictor.k0 = k
-            self._viewer.update_adjacency_matrix()
+            self._predictor.k0 = k
+            self._update_adjacency_matrix()
