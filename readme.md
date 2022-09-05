@@ -16,11 +16,8 @@ applied to skeletonised endoscopic images.
     conda env create --file requirements.txt
     ```
 2. Run [`main.py`](./main.py)  
-    ```
-    python main.py
-    ```
 
-### Using a remote interpreter
+### If using a remote interpreter
 First set some variables before running.
 - Set the following environment variables (example)
     ```
@@ -30,6 +27,5 @@ First set some variables before running.
 
 ## Notes
 - Sample skeletonised images are provided in the [`img`](./img) folder.
-- The adjacency matrix is predicted using the BAC scheme.
 - This GUI implementation is currently not optimised for GPU.
 

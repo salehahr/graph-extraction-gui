@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QLabel, QVBoxLayout
 
-from .graphics_ops import draw_graph, np_img_to_pixmap
+from .graphics_ops import draw_graph
 
 if TYPE_CHECKING:
     from .DataContainer import DataContainer
