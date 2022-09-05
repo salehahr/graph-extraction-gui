@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import tensorflow as tf
 from PyQt5.QtGui import QPixmap
 
-from models import adj_matr_predictor, nodes_nn
+from models import load_models
 
 from .graphics_ops import fp_to_grayscale_img, tf_img_to_pixmap
 
@@ -22,36 +22,32 @@ class DataContainer(object):
     def __init__(self, viewer: Viewer):
         self.image_size: int = IMAGE_SIZE
 
-        # data objects
-        self._viewer: Viewer = viewer
-        self._nodes_nn: NodesNN = nodes_nn
-        self._predictor: AdjMatrPredictor = adj_matr_predictor
-
         # predictor parameters
         self._num_neighbours: int = num_neighbours
+
+        # data objects
+        nodes_nn, predictor = load_models(self)
+        self._viewer: Viewer = viewer
+        self._nodes_nn: NodesNN = nodes_nn
+        self._predictor: AdjMatrPredictor = predictor
 
         # predictor inputs
         self._current_image_filepath: str = DEFAULT_FILEPATH
         self._node_pos_tensor: Optional[tf.Tensor] = None
         self._node_deg_tensor: Optional[tf.Tensor] = None
 
-        # predictor outputs
-        self._pos_list_xy: Optional[np.ndarray] = None
-        self._adjacency_matrix: Optional[np.ndarray] = None
-
     def new_image_prediction(self):
         if self._nodes_nn:
-            self.predictor_inputs = self._nodes_nn.predict_from_skel(
-                self.skel_image_tensor
-            )
+            (
+                _,
+                self.node_pos_tensor,
+                self.node_deg_tensor,
+            ) = self._nodes_nn.predict_from_skel(self.skel_image_tensor)
+
             self._update_adjacency_matrix()
 
     def _update_adjacency_matrix(self):
-        self._predictor.predict(self.predictor_inputs)
-
-        self._pos_list_xy = self._predictor.pos_list_xy
-        self._adjacency_matrix = self._predictor.A
-
+        self._predictor.predict()
         self._viewer.update_predicted_graph()
 
     @property
@@ -63,6 +59,7 @@ class DataContainer(object):
         self._current_image_filepath = filepath
         self._viewer.update_skel_image()
 
+    # predictor inputs
     @property
     def skel_image(self) -> QPixmap:
         return QPixmap(self.current_image_filepath)
@@ -96,33 +93,22 @@ class DataContainer(object):
     def node_deg_tensor(self, value: tf.Tensor) -> None:
         self._node_deg_tensor = value
 
+    # predictor parameters
     @property
-    def predictor_inputs(self) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-        return self.skel_image_tensor, self.node_pos_tensor, self.node_deg_tensor
-
-    @predictor_inputs.setter
-    def predictor_inputs(self, inputs: Tuple[tf.Tensor, ...]):
-        _, node_pos, node_deg = inputs
-
-        self.node_pos_tensor = node_pos
-        self.node_deg_tensor = node_deg
-
-    @property
-    def pos_list_xy(self):
-        return self._pos_list_xy
-
-    @property
-    def adjacency_matrix(self) -> np.ndarray:
-        return self._adjacency_matrix
-
-    @property
-    def num_neighbours(self):
+    def num_neighbours(self) -> int:
         return self._num_neighbours
 
     @num_neighbours.setter
-    def num_neighbours(self, k: int):
+    def num_neighbours(self, k: int) -> None:
         if self._num_neighbours != k:
             self._num_neighbours = k
-
-            self._predictor.k0 = k
             self._update_adjacency_matrix()
+
+    # predictor outputs
+    @property
+    def pos_list_xy(self):
+        return self._predictor.pos_list_xy
+
+    @property
+    def adjacency_matrix(self) -> np.ndarray:
+        return self._predictor.A

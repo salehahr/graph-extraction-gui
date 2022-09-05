@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Optional, Tuple
 import tensorflow as tf
 
 from . import neighbour_ops
-
 from .models import get_edgenn_caller
 from .utils import (
     classify,
@@ -20,6 +19,8 @@ from .utils import (
 if TYPE_CHECKING:
     import numpy as np
 
+    from gui.DataContainer import DataContainer
+
     from .models import EdgeNN
 
 
@@ -29,11 +30,12 @@ def nodes_not_found(degrees: tf.Tensor) -> tf.Tensor:
 
 
 class AdjMatrPredictor(object):
-    def __init__(self, edge_nn: EdgeNN, num_neighbours: int):
+    def __init__(self, edge_nn: EdgeNN, data_container: DataContainer):
         self._model: tf.keras.models.Model = edge_nn.keras_model
-        self._init_num_neighbours = tf.constant(num_neighbours)
+        self._data_container: DataContainer = data_container
+
         self._num_neighbours = tf.Variable(
-            initial_value=num_neighbours, trainable=False
+            initial_value=self._data_container.num_neighbours, trainable=False
         )
 
         # functions
@@ -45,8 +47,6 @@ class AdjMatrPredictor(object):
         self._update_func: tf.types.experimental.ConcreteFunction
 
         # current image data
-        self._skel_img: tf.Tensor
-        self._node_pos: tf.Tensor
         self._pos_list_xy: tf.Tensor
 
         """All initially available node pair combinations."""
@@ -98,27 +98,21 @@ class AdjMatrPredictor(object):
             self._recall,
         ]
 
-    def predict(self, input_data: Tuple[tf.Tensor, tf.Tensor, tf.Tensor]) -> None:
+    def predict(self) -> None:
         """Runs prediction only over one batch of knn pair combinations.
         Returns the time taken (neglecting the prediction made
         when graph tracing occurs)."""
         # with tracing
-        self._init_prediction(*input_data)
+        self._init_prediction()
         self._update_func(self._combos, self._adjacencies, self._A)
 
-    def _init_prediction(
-        self, skel_img: tf.Tensor, node_pos: tf.Tensor, degrees: tf.Tensor
-    ) -> None:
+    def _init_prediction(self) -> None:
         """Initialises placeholders and flags before predicting."""
-
-        # store skel img, node_pos matrix
-        self._skel_img = skel_img
-        self._node_pos = node_pos
-        self._num_neighbours.assign(self._init_num_neighbours)
+        self._num_neighbours.assign(self.k0)
 
         # derived data; constants/reference
-        node_pos = tf.expand_dims(node_pos, -1)
-        degrees = tf.expand_dims(degrees, -1)
+        node_pos = tf.expand_dims(self.node_pos, -1)
+        degrees = tf.expand_dims(self.node_degrees, -1)
         self._pos_list_xy, degrees_list, num_nodes = data_from_node_imgs(
             node_pos, degrees
         )
@@ -182,8 +176,8 @@ class AdjMatrPredictor(object):
     def _get_predictions(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """Obtains the model prediction on current neighbour node combinations.."""
         current_batch = get_combo_inputs(
-            tf.squeeze(self._skel_img),
-            tf.squeeze(self._node_pos),
+            tf.squeeze(self.skel_img),
+            tf.squeeze(self.node_pos),
             self._combos,
             self._pos_list_xy,
         )
@@ -222,9 +216,17 @@ class AdjMatrPredictor(object):
         return self._pos_list_xy.numpy()
 
     @property
-    def k0(self):
-        return self._init_num_neighbours
+    def k0(self) -> tf.Tensor:
+        return tf.constant(self._data_container.num_neighbours)
 
-    @k0.setter
-    def k0(self, value):
-        self._init_num_neighbours = value
+    @property
+    def skel_img(self) -> tf.Tensor:
+        return self._data_container.skel_image_tensor
+
+    @property
+    def node_pos(self) -> tf.Tensor:
+        return self._data_container.node_pos_tensor
+
+    @property
+    def node_degrees(self) -> tf.Tensor:
+        return self._data_container.node_deg_tensor

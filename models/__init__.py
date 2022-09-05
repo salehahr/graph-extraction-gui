@@ -1,18 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Tuple
+
 from .AdjMatrPredictor import AdjMatrPredictor
 from .models import EdgeNN, NodesNN
 
-from config import num_neighbours
+if TYPE_CHECKING:
+    from gui.DataContainer import DataContainer
 
 
-def load():
+def load_models(data_container: DataContainer) -> Tuple[NodesNN, AdjMatrPredictor]:
     nodes_nn_weights = "./models/nodes_nn"
     edge_nn_weights = "./models/edge_nn"
 
-    nodes_nn_ = NodesNN(nodes_nn_weights)
-    edge_nn_ = EdgeNN(edge_nn_weights)
+    nodes_nn = NodesNN(nodes_nn_weights)
+    edge_nn = EdgeNN(edge_nn_weights)
 
-    return nodes_nn_, edge_nn_
+    adj_matr_predictor = AdjMatrPredictor(edge_nn, data_container)
 
-
-nodes_nn, edge_nn = load()
-adj_matr_predictor = AdjMatrPredictor(edge_nn, num_neighbours)
+    return nodes_nn, adj_matr_predictor
