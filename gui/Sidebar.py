@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
+    QComboBox,
     QDockWidget,
     QFileDialog,
     QFormLayout,
@@ -17,6 +18,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from models.ACS import AdjCombinationSchemes
 
 if TYPE_CHECKING:
     from .DataContainer import DataContainer
@@ -51,6 +54,9 @@ class Sidebar(QDockWidget):
         self.setWidget(multi_widget)
 
         layout.setAlignment(Qt.AlignTop)
+
+    def reset_settings(self):
+        self._adj_scheme.reset_settings()
 
 
 class SideBarWidget(QGroupBox):
@@ -133,31 +139,64 @@ class FileBrowser(SideBarWidget):
 class AdjacencyScheme(SideBarWidget):
     def __init__(self, *args, **kwargs):
         self._num_neighbours_field: Optional[QLineEdit] = None
+        self._algorithm_field: Optional[QComboBox] = None
 
         super().__init__(*args, **kwargs)
 
     def _init_layout(self):
-        layout = QFormLayout()
-
         validator = QIntValidator(1, 50)
-        self._num_neighbours_field = QLineEdit(str(self.num_neighbours))
+        self._num_neighbours_field = QLineEdit()
         self._num_neighbours_field.setValidator(validator)
-        self._num_neighbours_field.setFixedWidth(25)
+        self._num_neighbours_field.setFixedWidth(50)
 
+        self._algorithm_field = QComboBox()
+        for algorithm in AdjCombinationSchemes:
+            self._algorithm_field.addItem(algorithm.name)
+        self._num_neighbours_field.setFixedWidth(50)
+
+        self.reset_settings()
+
+        layout = QFormLayout()
+        layout.addRow("Algorithm", self._algorithm_field)
         layout.addRow("Num. neighbours (k0)", self._num_neighbours_field)
 
         apply_button = QPushButton("Apply")
-        apply_button.clicked.connect(self._set_num_neighbours)
+        apply_button.clicked.connect(self._apply_settings)
 
         layout.addRow(apply_button)
 
         self.setLayout(layout)
 
-    def _set_num_neighbours(self):
-        self.num_neighbours = int(self._num_neighbours_field.text())
+    def reset_settings(self):
+        self._algorithm_field.setCurrentIndex(self.algorithm)
+        self._num_neighbours_field.setText(str(self.num_neighbours))
+
+    def _apply_settings(self):
+        new_algorithm = int(self._algorithm_field.currentIndex())
+        new_k0 = int(self._num_neighbours_field.text())
+
+        algorithm_changed = new_algorithm != self.algorithm
+        k0_changed = new_k0 != self.num_neighbours
+
+        if not (k0_changed or algorithm_changed):
+            return
+
+        if algorithm_changed:
+            self.algorithm = new_algorithm
+        if k0_changed:
+            self.num_neighbours = new_k0
+        self._data_container.update_adjacency_matrix()
 
     @property
-    def num_neighbours(self):
+    def algorithm(self) -> int:
+        return self._data_container.algorithm
+
+    @algorithm.setter
+    def algorithm(self, value: int):
+        self._data_container.algorithm = value
+
+    @property
+    def num_neighbours(self) -> int:
         return self._data_container.num_neighbours
 
     @num_neighbours.setter

@@ -46,6 +46,9 @@ class Viewer(QMainWindow):
     def update_predicted_graph(self):
         self._graphics.display_predicted_graph()
 
+    def reset_settings(self):
+        self._sidebar.reset_settings()
+
     def sizeHint(self) -> QSize:
         width = self._graphics.width + self._sidebar.width
         height = self._graphics.height

@@ -45,9 +45,9 @@ class DataContainer(object):
                 self.node_deg_tensor,
             ) = self._nodes_nn.predict_from_skel(self.skel_image_tensor)
 
-            self._update_adjacency_matrix()
+            self.update_adjacency_matrix()
 
-    def _update_adjacency_matrix(self):
+    def update_adjacency_matrix(self):
         self._predictor.predict()
         self._viewer.update_predicted_graph()
 
@@ -58,6 +58,7 @@ class DataContainer(object):
     @current_image_filepath.setter
     def current_image_filepath(self, filepath: str) -> None:
         self._current_image_filepath = filepath
+        self._viewer.reset_settings()
         self._viewer.update_skel_image()
 
     # predictor inputs
@@ -109,9 +110,7 @@ class DataContainer(object):
 
     @num_neighbours.setter
     def num_neighbours(self, k: int) -> None:
-        if self._num_neighbours != k:
-            self._num_neighbours = k
-            self._update_adjacency_matrix()
+        self._num_neighbours = k
 
     # predictor outputs
     @property
